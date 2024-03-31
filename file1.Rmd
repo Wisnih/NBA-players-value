@@ -1,0 +1,22 @@
+
+
+```{r}
+install.packages("readxl")
+
+```
+```{r}
+library(readxl)
+```
+
+
+```{r}
+df <- nba_player_2013_2024_data
+```
+
+```{r}
+head(df)
+```
+```{r}
+
+```
+
