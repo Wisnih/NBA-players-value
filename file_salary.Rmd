@@ -1,0 +1,107 @@
+
+Loading libraries
+```{r}
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+library(scales)
+library(writexl)
+library(tibble)
+```
+
+Downloading salary database
+```{r}
+df <- read_excel("salary_2013-2024.xlsx")
+View(df)
+```
+
+Cleaning the salary data
+```{r}
+df$Salary <- as.numeric(gsub("[$,]", "", df$Salary))
+```
+
+Viewing the updated data
+```{r}
+View(df)
+```
+
+Creating minimum salary column
+```{r}
+min_salary <- c(490180, 507336, 525093, 543471, 815615, 831927, 898310, 898310, 925258, 953012, 1119563)
+```
+
+Creating a season summary of salaries
+```{r}
+salary_seasons <- df %>%
+  group_by(Year) %>%
+  summarise(players = n(), avg_salary = mean(Salary), median_salary = median(Salary), most_paid = max(Salary), min_paid = min(Salary))
+
+salary_seasons <- salary_seasons %>%
+  add_column(min_salary = min_salary)
+View(salary_seasons)
+```
+
+Saving databases
+```{r}
+#write_xlsx(salary_seasons, "salary_seasons.xlsx")
+#write_xlsx(df, "salary_2013-2024_cleaned.xlsx")
+```
+
+Downloading cleaned data without players under mininum salary
+```{r}
+df2 <- read_excel("salary_2013-2024_cleaned.xlsx")
+View(df2)
+```
+
+Creating a season summary of salaries
+```{r}
+salary_seasons2 <- df2 %>%
+  group_by(Year) %>%
+  summarise(players = n(), avg_salary = mean(Salary), median_salary = median(Salary), most_paid = max(Salary), min_paid = min(Salary))
+
+salary_seasons2 <- salary_seasons2 %>%
+  add_column(min_salary = min_salary)
+View(salary_seasons2)
+```
+
+Ploting salary_seasons
+```{r}
+ggplot(salary_seasons2, aes(x = Year, y = avg_salary))  +
+  geom_line(color="#69b3a2", size=2)
+```
+
+Saving databases
+```{r}
+#write_xlsx(salary_seasons2, "salary_seasons2.xlsx")
+#write_xlsx(df, "salary_2013-2024_cleaned.xlsx")
+```
+
+Count unique players
+```{r}
+all_players <- distinct(df2,Player)
+View(all_players)
+```
+
+Save players list
+```{r}
+#write_csv(all_players, "All_players.csv")
+```
+
+Salary for 2023-24 season
+```{r}
+salary_2024 <- df2 %>%
+  filter(Year == 2024)
+```
+
+Distribution of NBA salary for 2023-24 season
+```{r}
+salary_histogram <- ggplot(salary_2024, aes(x = Salary)) +
+  geom_histogram(binwidth = 1000000, color = "white", fill = "#0072B2") + 
+  labs(title = "Distribution of NBA Player Salaries for 2023-24 season", x = "Salary", y = "Number of Players") + 
+  scale_x_continuous(labels = scales::dollar_format(prefix = "$"), breaks = seq(0, max(salary_2024$Salary), by = 1e7)) + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+salary_histogram
+```
+
+

@@ -1,0 +1,23 @@
+
+Loading libraries
+```{r}
+library(readxl)
+library(tidyverse)
+library(writexl)
+```
+
+Downloading player database
+```{r}
+nba_player_2013_2024_data <- read_excel("nba_player_2013_2024_cleaned.xlsx")
+View(nba_player_2013_2024_data)
+```
+
+Creating advanced variables
+```{r}
+nba_advanced <- nba_player_2013_2024_data %>%
+  mutate(AST_RATIO = (100*AST)/(FGA + 0.44 * FTA + AST + TOV), TOV_RATIO =    (100*TOV)/(FGA + 0.44 * FTA + AST + TOV), TS_PCT = PTS/(2*(FGA+0.44*FTA)), MIN = MIN/GP) %>%
+select(Year, PLAYER, TEAM, MIN, AST_RATIO, TOV_RATIO, TS_PCT, AST_TOV, STL_TOV) 
+
+View(nba_advanced)
+```
+

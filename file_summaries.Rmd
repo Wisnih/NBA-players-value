@@ -1,0 +1,129 @@
+
+Loading libraries
+```{r}
+library(readxl)
+library(tidyverse)
+library(writexl)
+```
+
+Downloading player database
+```{r}
+nba_player_2013_2024_data <- read_excel("nba_player_2013_2024_cleaned.xlsx")
+View(nba_player_2013_2024_data)
+```
+
+Creating seasons_summary table, which shows important statistics for whole seasons
+```{r}
+seasons_summary <- nba_player_2013_2024_data %>%
+  group_by(Year) %>%
+  summarise(FG_PCT = sum(FGM)/sum(FGA),
+            FG3_PCT = sum(FG3M)/sum(FG3A),
+            FT_PCT = sum(FTM)/sum(FTA),
+            TS_PCT = sum(PTS)/(2*(sum(FGA)+0.475*sum(FTA))),
+            lgAST = sum(AST),
+            lgFG = sum(FGM),
+            lgFT = sum(FTM),
+            lgFGA = sum(FGA),
+            lgFTA = sum(FTA),
+            lgORB = sum(OREB),
+            lgTO = sum(TOV),
+            lgPTS = sum(PTS),
+            lgTRB = sum(REB),
+            lgPF = sum(PF),
+            lgPace = 48*(sum(FGA) + sum(TOV) + 0.475*sum(FTA) - sum(OREB))/sum(MIN)
+            )
+  
+View(seasons_summary)
+```
+
+Creating team_summary table, which shows important statistics for teams in each season
+```{r}
+team_summary <- nba_player_2013_2024_data %>%
+  group_by(Year, TEAM) %>%
+  summarise(tmMP = sum(MIN),
+            tmAST = sum(AST),
+            tmFG = sum(FGM),
+            tmPOSS = sum(FGA) + sum(TOV) + 0.475*sum(FTA) - sum(OREB),
+            tmPace = 48*(sum(FGA) + sum(TOV) + 0.475*sum(FTA) - sum(OREB))/sum(MIN),
+            ORTG = 100*sum(PTS)/(sum(FGA) + sum(TOV) + 0.475*sum(FTA) - sum(OREB))
+            )
+
+View(team_summary)
+```
+
+Creating important variables for PER calculation
+```{r}
+var_PER <- seasons_summary %>%
+  mutate(factor = (2/3)-((0.5*(lgAST/lgFG))/(2*(lgFG/lgFT))),
+         VOP = lgPTS/(lgFTA - lgORB + lgTO + 0.44 * lgFTA),
+         DRBP = (lgTRB - lgORB)/lgTRB)
+var_PER
+```
+
+Calculating uPER
+```{r}
+uPER <- function(min, 
+                 three_p, 
+                 ast, 
+                 factor, 
+                 tmAST, 
+                 tmFG, 
+                 fg, 
+                 ft,
+                 fta,
+                 vop,
+                 to,
+                 drbp,
+                 fga,
+                 trb,
+                 orb,
+                 blk,
+                 stl,
+                 pf,
+                 lgFT,
+                 lgPF,
+                 lgFTA
+                 ) {
+  u_PER <- (1/min) * (three_p + ((2/3) * ast) + ((2 - factor * (tmAST/tmFG)) * fg) + (0.5 * ft * (2 - (1/3) * (tmAST/tmFG))) - (vop * to) - (vop * drbp * (fga - fg)) - (vop * 0.44 * (0.44 + (0.56 * drbp)) * (fta - ft)) + (vop * (1 - drbp) * (trb - orb)) + (vop * drbp * orb) + (vop * stl) + (vop * drbp * blk) - (pf * ((lgFT/lgPF) - 0.44 * (lgFTA/lgPF) * vop)))
+  u_PER
+}
+```
+
+Sample of uPER for Kevin Durant
+```{r}
+kd_uper_2014 <- uPER(nba_player_2013_2024_data[[1,"MIN"]],
+                    nba_player_2013_2024_data[[1,"FG3M"]],
+                    nba_player_2013_2024_data[[1,"AST"]],
+                    var_PER[[1,"factor"]],
+                    team_summary[[21, "tmAST"]],
+                    team_summary[[21, "tmFG"]],
+                    nba_player_2013_2024_data[[1, "FGM"]],
+                    nba_player_2013_2024_data[[1, "FTM"]],
+                    nba_player_2013_2024_data[[1, "FTA"]],
+                    var_PER[[1, "VOP"]],
+                    nba_player_2013_2024_data[[1, "TOV"]],
+                    var_PER[[1, "DRBP"]],
+                    nba_player_2013_2024_data[[1, "FGA"]],
+                    nba_player_2013_2024_data[[1, "REB"]],
+                    nba_player_2013_2024_data[[1, "OREB"]],
+                    nba_player_2013_2024_data[[1, "BLK"]],
+                    nba_player_2013_2024_data[[1, "STL"]],
+                    nba_player_2013_2024_data[1, "PF"],
+                    var_PER[[1, "lgFT"]],
+                    var_PER[[1, "lgPF"]],
+                    var_PER[[1, "lgFTA"]])[[1,1]]
+
+
+kd_per_2014 <- (kd_uper_2014*(93.9/95.4))*(15/0.1495)
+kd_uper_2014
+kd_per_2014
+```
+
+Estimated possesions per game
+```{r}
+team_summary %>%
+  mutate(est_poss_per_game = estPOSS/82)
+```
+
+
+

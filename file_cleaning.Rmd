@@ -1,0 +1,70 @@
+
+Loading libraries
+```{r}
+library(readxl)
+library(tidyverse)
+library(writexl)
+```
+
+Downloading player database
+```{r}
+nba_player_2013_2024_data <- read_excel("nba_player_2013-2024_data.xlsx")
+View(nba_player_2013_2024_data)
+```
+
+Showing a head of the table 
+```{r}
+head(nba_player_2013_2024_data)
+```
+
+Cleaning the data
+```{r}
+nba_player_2013_2024_data$TEAM[nba_player_2013_2024_data$TEAM == "NOH"] <- "NO"
+nba_player_2013_2024_data$TEAM[nba_player_2013_2024_data$TEAM == "NOP"] <- "NO"
+nba_player_2013_2024_data$Year <- paste(substr(nba_player_2013_2024_data$Year, 1, 2), substr(nba_player_2013_2024_data$Year, 6, 7), sep = "")
+nba_player_2013_2024_data$Year <- as.numeric(nba_player_2013_2024_data$Year)
+nba_player_2013_2024_data <- nba_player_2013_2024_data %>%
+  select(-TEAM_ID,-RANK, -PLAYER_ID, -EFF)
+
+head(nba_player_2013_2024_data)
+```
+
+Saving the cleaned data
+```{r}
+#write_xlsx(nba_player_2013_2024_data, "nba_player_2013_2024_cleaned.xlsx")
+```
+
+Downloading hugging face data
+```{r}
+hug_df <- read_excel("NBA_stats_advanced.xlsx")
+View(hug_df)
+```
+
+Changing the name of a column
+```{r}
+colnames(hug_df)[which(names(hug_df) == "TEAM_ABBREVIATION")] <- "TEAM"
+colnames(hug_df)[which(names(hug_df) == "SEASON")] <- "YEAR"
+colnames(hug_df)[which(names(hug_df) == "PLAYER_NAME")] <- "PLAYER"
+```
+
+Cleaning the data
+```{r}
+hug_df$TEAM[hug_df$TEAM == "NOH"] <- "NO"
+hug_df$TEAM[hug_df$TEAM == "NOP"] <- "NO"
+hug_df$YEAR <- paste(substr(hug_df$YEAR, 1, 2), substr(hug_df$YEAR, 6, 7), sep = "")
+hug_df$YEAR <- as.numeric(hug_df$YEAR)
+```
+
+Selecting only data from 2014 onwards
+```{r}
+hug_df <- hug_df %>%
+  filter(YEAR >= 2014) %>%
+  arrange(YEAR) %>%
+  select(-GP_RANK, -W_RANK, -L_RANK, -W_PCT_RANK, -MIN_RANK, -FGM_RANK, -FGA_RANK, -FG_PCT_RANK, -FG3M_RANK, -FG3A_RANK, -FG3_PCT_RANK, -FTM_RANK, -FTA_RANK, -FT_PCT_RANK, -OREB_RANK, -DREB_RANK, -REB_RANK, -AST_RANK, -TOV_RANK, -STL_RANK, -BLK_RANK, -BLKA_RANK, -PF_RANK, -PFD_RANK, -PTS_RANK, -PLUS_MINUS_RANK, -DD2_RANK, -TD3_RANK)
+```
+
+Saving the cleaned data
+```{r}
+write_xlsx(hug_df, "NBA_data_cleaned.xlsx")
+```
+
